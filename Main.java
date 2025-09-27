@@ -43,6 +43,9 @@ public class Main {
 
         int[][] canalR, canalG, canalB;
         String salida;
+
+        long inicio = System.nanoTime();
+
         if (operacion.equals("dilatacion")) {
             canalR = Secuencial.dilatacion(canales[0], ee);
             canalG = Secuencial.dilatacion(canales[1], ee);
@@ -58,9 +61,13 @@ public class Main {
             return;
         }
 
+        long fin = System.nanoTime(); 
+        double tiempoSegundos = (fin - inicio) / 1_000_000_000.0;
+
         int[][][] matrizFinal = TrabajarMatrizRGB.combinarCanales(canalR, canalG, canalB);
         TrabajarMatrizRGB.MatrizToImagen(matrizFinal, salida);
         System.out.println("Imagen procesada y guardada como " + salida);
+        System.out.printf("Tiempo de ejecucion secuencial: %.4f segundos%n", tiempoSegundos);
     }
 
     public static void mostrarElementosEstructurantes() {
