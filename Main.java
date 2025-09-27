@@ -1,5 +1,6 @@
 public class Main {
     public static void main(String[] args) {
+        mostrarElementosEstructurantes();
         if (args.length < 3) {
             System.out.println("Uso: java Main <imagen> <operacion> <ee>");
             System.out.println("Ejemplo: java Main imagen_rgb.png dilatacion Estructura1");
@@ -60,5 +61,27 @@ public class Main {
         int[][][] matrizFinal = TrabajarMatrizRGB.combinarCanales(canalR, canalG, canalB);
         TrabajarMatrizRGB.MatrizToImagen(matrizFinal, salida);
         System.out.println("Imagen procesada y guardada como " + salida);
+    }
+
+    public static void mostrarElementosEstructurantes() {
+        System.out.println("Elementos estructurantes disponibles:");
+        mostrarEE("Estructura1", ElementoEstructurante.Estructura1);
+        mostrarEE("Estructura2", ElementoEstructurante.Estructura2);
+        mostrarEE("Estructura3", ElementoEstructurante.Estructura3);
+        mostrarEE("Estructura4", ElementoEstructurante.Estructura4);
+        mostrarEE("Estructura5", ElementoEstructurante.Estructura5);
+    }
+
+    public static void mostrarEE(String nombre, ElementoEstructurante ee) {
+        System.out.println(nombre + ":");
+        int[][] estructura = ee.getEstructura();
+        for (int i = 0; i < estructura.length; i++) {
+            for (int j = 0; j < estructura[0].length; j++) {
+                System.out.print(estructura[i][j] + " ");
+            }
+            System.out.println();
+        }
+        System.out.println("Ancla: (" + ee.getAnclaY() + ", " + ee.getAnclaX() + ")");
+        System.out.println();
     }
 }

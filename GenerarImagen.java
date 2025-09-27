@@ -59,4 +59,30 @@ public class GenerarImagen {
 			e.printStackTrace();
 		}
 	}
+
+	public static int[][][] crearImagenPatron(int filas, int columnas) {
+		int[][][] imagen = new int[filas][columnas][3];
+
+		// Fondo negro
+		for (int i = 0; i < filas; i++) {
+			for (int j = 0; j < columnas; j++) {
+				imagen[i][j][0] = 0; // R
+				imagen[i][j][1] = 0; // G
+				imagen[i][j][2] = 0; // B
+			}
+		}
+
+		// Cuadrado blanco en el centro
+		int lado = Math.min(filas, columnas) / 3;
+		int inicioY = (filas - lado) / 2;
+		int inicioX = (columnas - lado) / 2;
+		for (int i = inicioY; i < inicioY + lado; i++) {
+			for (int j = inicioX; j < inicioX + lado; j++) {
+				imagen[i][j][0] = 255;
+				imagen[i][j][1] = 255;
+				imagen[i][j][2] = 255;
+			}
+		}
+		return imagen;
+	}
 }
