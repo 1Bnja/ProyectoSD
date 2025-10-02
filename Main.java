@@ -84,9 +84,9 @@ public class Main {
         System.out.println("- " + salidaSecuencial);
         System.out.println("- " + salidaParalela);
 
-        // Comparar imágenes si es necesario (opcional para imágenes muy grandes)
-        System.out.println("\nNota: Para imágenes de 10000x10000, la comparación pixel a pixel");
-        System.out.println("puede ser muy lenta. Las imágenes han sido guardadas para verificación manual.");
+        // COMPARAR RESULTADOS
+        System.out.println("\n=== COMPARACIÓN DE RESULTADOS ===");
+        compararImagenes(salidaSecuencial, salidaParalela);
 
         // Mostrar uso de memoria final
         System.gc();
@@ -234,5 +234,124 @@ public class Main {
         }
         System.out.println("Ancla: (" + ee.getAnclaY() + ", " + ee.getAnclaX() + ")");
         System.out.println();
+    }
+
+    /**
+     * Compara dos imágenes píxel por píxel para verificar si son idénticas
+     * @param imagenPath1 Ruta de la primera imagen (secuencial)
+     * @param imagenPath2 Ruta de la segunda imagen (paralela)
+     */
+    public static void compararImagenes(String imagenPath1, String imagenPath2) {
+        try {
+            System.out.println("Comparando imágenes...");
+            long inicioComparacion = System.nanoTime();
+            
+            // Cargar ambas imágenes
+            java.awt.image.BufferedImage imagen1 = javax.imageio.ImageIO.read(new java.io.File(imagenPath1));
+            java.awt.image.BufferedImage imagen2 = javax.imageio.ImageIO.read(new java.io.File(imagenPath2));
+            
+            // Verificar dimensiones
+            if (imagen1.getWidth() != imagen2.getWidth() || imagen1.getHeight() != imagen2.getHeight()) {
+                System.out.println("❌ Las imágenes tienen dimensiones diferentes:");
+                System.out.println("  Imagen 1: " + imagen1.getWidth() + "x" + imagen1.getHeight());
+                System.out.println("  Imagen 2: " + imagen2.getWidth() + "x" + imagen2.getHeight());
+                return;
+            }
+            
+            int alto = imagen1.getHeight();
+            int ancho = imagen1.getWidth();
+            int pixelesDiferentes = 0;
+            int pixelesTotales = alto * ancho;
+            int primerasDiferencias = 0;
+            final int MAX_DIFERENCIAS_MOSTRAR = 10;
+            
+            System.out.println("Dimensiones: " + alto + "x" + ancho + " (" + pixelesTotales + " píxeles)");
+            
+            // Variables para mostrar progreso
+            int progresoAnterior = 0;
+            
+            // Comparar píxel por píxel
+            for (int y = 0; y < alto; y++) {
+                for (int x = 0; x < ancho; x++) {
+                    int rgb1 = imagen1.getRGB(x, y);
+                    int rgb2 = imagen2.getRGB(x, y);
+                    
+                    if (rgb1 != rgb2) {
+                        pixelesDiferentes++;
+                        
+                        // Mostrar las primeras diferencias encontradas
+                        if (primerasDiferencias < MAX_DIFERENCIAS_MOSTRAR) {
+                            int r1 = (rgb1 >> 16) & 0xFF;
+                            int g1 = (rgb1 >> 8) & 0xFF;
+                            int b1 = rgb1 & 0xFF;
+                            
+                            int r2 = (rgb2 >> 16) & 0xFF;
+                            int g2 = (rgb2 >> 8) & 0xFF;
+                            int b2 = rgb2 & 0xFF;
+                            
+                            System.out.println("  Diferencia en píxel (" + x + "," + y + "):");
+                            System.out.println("    Secuencial: RGB(" + r1 + "," + g1 + "," + b1 + ")");
+                            System.out.println("    Paralela:   RGB(" + r2 + "," + g2 + "," + b2 + ")");
+                            
+                            primerasDiferencias++;
+                        }
+                    }
+                }
+                
+                // Mostrar progreso cada 10% para imágenes grandes
+                if (alto > 1000) {
+                    int progresoActual = (y * 100) / alto;
+                    if (progresoActual >= progresoAnterior + 10) {
+                        System.out.println("  Progreso comparación: " + progresoActual + "% - " +
+                                         "Diferencias hasta ahora: " + pixelesDiferentes);
+                        progresoAnterior = progresoActual;
+                    }
+                }
+            }
+            
+            long finComparacion = System.nanoTime();
+            double tiempoComparacion = (finComparacion - inicioComparacion) / 1_000_000_000.0;
+            
+            // Mostrar resultados de la comparación
+            System.out.println("\n=== RESULTADO DE LA COMPARACIÓN ===");
+            System.out.printf("Tiempo de comparación: %.4f segundos%n", tiempoComparacion);
+            System.out.println("Píxeles totales: " + pixelesTotales);
+            System.out.println("Píxeles diferentes: " + pixelesDiferentes);
+            
+            if (pixelesDiferentes == 0) {
+                System.out.println("✅ ¡RESULTADOS IDÉNTICOS!");
+                System.out.println("Las imágenes secuencial y paralela son exactamente iguales.");
+            } else {
+                double porcentajeDiferencia = (pixelesDiferentes * 100.0) / pixelesTotales;
+                System.out.println("❌ RESULTADOS DIFERENTES");
+                System.out.printf("Porcentaje de píxeles diferentes: %.6f%%%n", porcentajeDiferencia);
+                
+                if (primerasDiferencias >= MAX_DIFERENCIAS_MOSTRAR) {
+                    System.out.println("... y " + (pixelesDiferentes - MAX_DIFERENCIAS_MOSTRAR) + " diferencias más.");
+                }
+                
+                // Determinar si las diferencias son significativas
+                if (porcentajeDiferencia < 0.001) {
+                    System.out.println("⚠️  Las diferencias son mínimas (< 0.001%), posiblemente debido a:");
+                    System.out.println("   - Precisión de punto flotante");
+                    System.out.println("   - Orden de operaciones en el procesamiento paralelo");
+                    System.out.println("   - Condiciones de borde en la división por bloques");
+                } else {
+                    System.out.println("⚠️  Las diferencias son significativas. Verificar:");
+                    System.out.println("   - Implementación del algoritmo paralelo");
+                    System.out.println("   - Manejo de halos en los bloques");
+                    System.out.println("   - Sincronización de hilos");
+                }
+            }
+            
+            // Liberar memoria
+            imagen1 = null;
+            imagen2 = null;
+            System.gc();
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error al comparar imágenes: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
