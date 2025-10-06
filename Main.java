@@ -252,7 +252,7 @@ public class Main {
             
             // Verificar dimensiones
             if (imagen1.getWidth() != imagen2.getWidth() || imagen1.getHeight() != imagen2.getHeight()) {
-                System.out.println("❌ Las imágenes tienen dimensiones diferentes:");
+                System.out.println(" Las imágenes tienen dimensiones diferentes:");
                 System.out.println("  Imagen 1: " + imagen1.getWidth() + "x" + imagen1.getHeight());
                 System.out.println("  Imagen 2: " + imagen2.getWidth() + "x" + imagen2.getHeight());
                 return;
@@ -319,11 +319,11 @@ public class Main {
             System.out.println("Píxeles diferentes: " + pixelesDiferentes);
             
             if (pixelesDiferentes == 0) {
-                System.out.println("✅ ¡RESULTADOS IDÉNTICOS!");
+                System.out.println(" RESULTADOS IDÉNTICOS");
                 System.out.println("Las imágenes secuencial y paralela son exactamente iguales.");
             } else {
                 double porcentajeDiferencia = (pixelesDiferentes * 100.0) / pixelesTotales;
-                System.out.println("❌ RESULTADOS DIFERENTES");
+                System.out.println(" RESULTADOS DIFERENTES");
                 System.out.printf("Porcentaje de píxeles diferentes: %.6f%%%n", porcentajeDiferencia);
                 
                 if (primerasDiferencias >= MAX_DIFERENCIAS_MOSTRAR) {
@@ -350,7 +350,7 @@ public class Main {
             System.gc();
             
         } catch (Exception e) {
-            System.err.println("❌ Error al comparar imágenes: " + e.getMessage());
+            System.err.println(" Error al comparar imágenes: " + e.getMessage());
             e.printStackTrace();
         }
     }
