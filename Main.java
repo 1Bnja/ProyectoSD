@@ -329,11 +329,6 @@ public class Main {
         System.out.println();
     }
 
-    /**
-     * Compara dos imágenes píxel por píxel para verificar si son idénticas
-     * @param imagenPath1 Ruta de la primera imagen (secuencial)
-     * @param imagenPath2 Ruta de la segunda imagen (paralela)
-     */
     public static void compararImagenes(String imagenPath1, String imagenPath2) {
         try {
             System.out.println("Comparando imágenes...");
@@ -425,12 +420,12 @@ public class Main {
                 
                 // Determinar si las diferencias son significativas
                 if (porcentajeDiferencia < 0.001) {
-                    System.out.println("⚠️  Las diferencias son mínimas (< 0.001%), posiblemente debido a:");
+                    System.out.println("  Las diferencias son mínimas (< 0.001%), posiblemente debido a:");
                     System.out.println("   - Precisión de punto flotante");
                     System.out.println("   - Orden de operaciones en el procesamiento paralelo");
                     System.out.println("   - Condiciones de borde en la división por bloques");
                 } else {
-                    System.out.println("⚠️  Las diferencias son significativas. Verificar:");
+                    System.out.println("  Las diferencias son significativas. Verificar:");
                     System.out.println("   - Implementación del algoritmo paralelo");
                     System.out.println("   - Manejo de halos en los bloques");
                     System.out.println("   - Sincronización de hilos");
