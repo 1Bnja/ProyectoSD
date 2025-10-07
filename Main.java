@@ -51,29 +51,84 @@ public class Main {
 
         // PROCESAMIENTO SECUENCIAL
         System.out.println("\n=== PROCESAMIENTO SECUENCIAL ===");
+        
+        // Limpiar memoria y esperar estabilización
+        System.gc();
+        try { Thread.sleep(1000); } catch (InterruptedException e) {}
+        System.gc();
+        try { Thread.sleep(500); } catch (InterruptedException e) {}
+        
+        // Medir memoria baseline
+        long memoriaLibreInicial = runtime.freeMemory();
+        long memoriaTotalInicial = runtime.totalMemory();
+        long memoriaUsadaInicial = memoriaTotalInicial - memoriaLibreInicial;
+        
         long inicioSec = System.nanoTime();
-        
-        procesarImagenCompleta(imagePath, operacion, ee, salidaSecuencial, false, 0);
-        
+        RecursosMedidos recursosSeq = procesarImagenCompletaConMedicion(imagePath, operacion, ee, salidaSecuencial, false, 0);
         long finSec = System.nanoTime();
+        
         double tiempoSecuencial = (finSec - inicioSec) / 1_000_000_000.0;
 
         // Limpiar memoria antes del procesamiento paralelo
         matriz = null;
         System.gc();
-        Thread.yield();
+        try { Thread.sleep(1000); } catch (InterruptedException e) {}
+        System.gc();
+        try { Thread.sleep(500); } catch (InterruptedException e) {}
 
         // PROCESAMIENTO PARALELO
         System.out.println("\n=== PROCESAMIENTO PARALELO ===");
+        
+        // Medir memoria baseline para paralelo
+        long memoriaLibreInicialPar = runtime.freeMemory();
+        long memoriaTotalInicialPar = runtime.totalMemory();
+        long memoriaUsadaInicialPar = memoriaTotalInicialPar - memoriaLibreInicialPar;
+        
         long inicioPar = System.nanoTime();
-        
-        procesarImagenCompleta(imagePath, operacion, ee, salidaParalela, true, numHilos);
-        
+        RecursosMedidos recursosPar = procesarImagenCompletaConMedicion(imagePath, operacion, ee, salidaParalela, true, numHilos);
         long finPar = System.nanoTime();
+        
         double tiempoParalelo = (finPar - inicioPar) / 1_000_000_000.0;
 
-        // Mostrar resultados
-        System.out.println("\n=== RESULTADOS ===");
+        // MOSTRAR RECURSOS UTILIZADOS DE FORMA CLARA Y DETALLADA
+        System.out.println("\n=== RECURSOS UTILIZADOS DETALLADOS ===");
+        System.out.println("PROCESAMIENTO SECUENCIAL:");
+        System.out.println("  • Número de hilos: 1");
+        System.out.printf("  • Memoria pico utilizada: %d MB%n", recursosSeq.memoriaPico / (1024 * 1024));
+        System.out.printf("  • Memoria promedio utilizada: %d MB%n", recursosSeq.memoriaPromedio / (1024 * 1024));
+        System.out.printf("  • Memoria final utilizada: %d MB%n", recursosSeq.memoriaFinal / (1024 * 1024));
+        System.out.printf("  • Tiempo de ejecución: %.4f segundos%n", tiempoSecuencial);
+        System.out.printf("  • Memoria heap total durante procesamiento: %d MB%n", recursosSeq.heapTotal / (1024 * 1024));
+        
+        System.out.println("\nPROCESAMIENTO PARALELO:");
+        System.out.printf("  • Número de hilos: %d%n", numHilos);
+        System.out.printf("  • Memoria pico utilizada: %d MB%n", recursosPar.memoriaPico / (1024 * 1024));
+        System.out.printf("  • Memoria promedio utilizada: %d MB%n", recursosPar.memoriaPromedio / (1024 * 1024));
+        System.out.printf("  • Memoria final utilizada: %d MB%n", recursosPar.memoriaFinal / (1024 * 1024));
+        System.out.printf("  • Tiempo de ejecución: %.4f segundos%n", tiempoParalelo);
+        System.out.printf("  • Memoria heap total durante procesamiento: %d MB%n", recursosPar.heapTotal / (1024 * 1024));
+        
+        // Comparación más detallada
+        System.out.println("\n=== COMPARACIÓN DETALLADA DE RECURSOS ===");
+        long diferenciaPico = (recursosPar.memoriaPico - recursosSeq.memoriaPico) / (1024 * 1024);
+        long diferenciaPromedio = (recursosPar.memoriaPromedio - recursosSeq.memoriaPromedio) / (1024 * 1024);
+        
+        System.out.printf("  • Diferencia en memoria pico: %+d MB (%s usa más en pico)%n", 
+            diferenciaPico, diferenciaPico > 0 ? "Paralelo" : "Secuencial");
+        System.out.printf("  • Diferencia en memoria promedio: %+d MB (%s usa más en promedio)%n", 
+            diferenciaPromedio, diferenciaPromedio > 0 ? "Paralelo" : "Secuencial");
+        
+        if (recursosSeq.memoriaPico > 0) {
+            System.out.printf("  • Relación memoria pico paralelo/secuencial: %.2fx%n", 
+                (double)recursosPar.memoriaPico / recursosSeq.memoriaPico);
+        }
+        if (recursosSeq.memoriaPromedio > 0) {
+            System.out.printf("  • Relación memoria promedio paralelo/secuencial: %.2fx%n", 
+                (double)recursosPar.memoriaPromedio / recursosSeq.memoriaPromedio);
+        }
+
+        // Mostrar resultados de rendimiento
+        System.out.println("\n=== RESULTADOS DE RENDIMIENTO ===");
         System.out.printf("Tiempo secuencial: %.4f segundos%n", tiempoSecuencial);
         System.out.printf("Tiempo paralelo: %.4f segundos%n", tiempoParalelo);
         if (tiempoParalelo > 0) {
@@ -90,21 +145,54 @@ public class Main {
 
         // Mostrar uso de memoria final
         System.gc();
-        long memoriaUsada = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
-        System.out.println("Memoria utilizada al final: " + memoriaUsada + " MB");
+        long memoriaFinal = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+        System.out.println("\n=== ESTADO FINAL DEL SISTEMA ===");
+        System.out.println("Memoria utilizada al final: " + memoriaFinal + " MB");
+        System.out.println("Memoria máxima disponible: " + maxMemory + " MB");
+        System.out.printf("Porcentaje de memoria utilizada: %.2f%%%n", (memoriaFinal * 100.0) / maxMemory);
     }
 
-    private static void procesarImagenCompleta(String imagePath, String operacion, 
+    // Nueva clase para medir recursos de forma más precisa
+    private static class RecursosMedidos {
+        long memoriaPico = 0;
+        long memoriaPromedio = 0;
+        long memoriaFinal = 0;
+        long heapTotal = 0;
+        int mediciones = 0;
+        long sumaMemoria = 0;
+        
+        void registrarMedicion(long memoriaUsada, long heapTotal) {
+            this.memoriaPico = Math.max(this.memoriaPico, memoriaUsada);
+            this.sumaMemoria += memoriaUsada;
+            this.mediciones++;
+            this.memoriaPromedio = this.sumaMemoria / this.mediciones;
+            this.memoriaFinal = memoriaUsada;
+            this.heapTotal = Math.max(this.heapTotal, heapTotal);
+        }
+    }
+
+    private static RecursosMedidos procesarImagenCompletaConMedicion(String imagePath, String operacion, 
                                              ElementoEstructurante ee, String salidaPath,
                                              boolean usarParalelo, int numHilos) {
+        RecursosMedidos recursos = new RecursosMedidos();
+        Runtime runtime = Runtime.getRuntime();
+        
         try {
             // Crear BufferedImage de salida
             java.awt.image.BufferedImage imagenOriginal = javax.imageio.ImageIO.read(new java.io.File(imagePath));
             int alto = imagenOriginal.getHeight();
             int ancho = imagenOriginal.getWidth();
             
+            // Medición inicial
+            long memoriaUsada = runtime.totalMemory() - runtime.freeMemory();
+            recursos.registrarMedicion(memoriaUsada, runtime.totalMemory());
+            
             java.awt.image.BufferedImage imagenSalida = new java.awt.image.BufferedImage(
                 ancho, alto, java.awt.image.BufferedImage.TYPE_INT_RGB);
+
+            // Medición después de crear imágenes
+            memoriaUsada = runtime.totalMemory() - runtime.freeMemory();
+            recursos.registrarMedicion(memoriaUsada, runtime.totalMemory());
 
             // Procesar cada canal por separado
             for (int canal = 0; canal < 3; canal++) {
@@ -113,6 +201,10 @@ public class Main {
                 
                 // Extraer canal
                 int[][] canalData = extraerCanal(imagenOriginal, canal);
+                
+                // Medición después de extraer canal
+                memoriaUsada = runtime.totalMemory() - runtime.freeMemory();
+                recursos.registrarMedicion(memoriaUsada, runtime.totalMemory());
                 
                 // Procesar canal
                 int[][] canalProcesado;
@@ -130,33 +222,45 @@ public class Main {
                     }
                 }
                 
+                // Medición después de procesar canal
+                memoriaUsada = runtime.totalMemory() - runtime.freeMemory();
+                recursos.registrarMedicion(memoriaUsada, runtime.totalMemory());
+                
                 // Escribir canal procesado a la imagen de salida
                 escribirCanal(imagenSalida, canalProcesado, canal);
                 
-                // Liberar memoria inmediatamente
+                // Medición después de escribir canal
+                memoriaUsada = runtime.totalMemory() - runtime.freeMemory();
+                recursos.registrarMedicion(memoriaUsada, runtime.totalMemory());
+                
+                // Mostrar progreso de memoria durante el procesamiento
+                long memoriaUsadaMB = memoriaUsada / (1024 * 1024);
+                long memoriaPicoMB = recursos.memoriaPico / (1024 * 1024);
+                System.out.println("  Memoria actual: " + memoriaUsadaMB + " MB, Pico: " + memoriaPicoMB + " MB");
+                
+                // Liberar memoria inmediatamente pero NO hacer GC agresivo
                 canalData = null;
                 canalProcesado = null;
-                System.gc();
-                
-                // Mostrar progreso de memoria
-                Runtime runtime = Runtime.getRuntime();
-                long memoriaUsada = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
-                System.out.println("  Memoria utilizada: " + memoriaUsada + " MB");
             }
             
             // Guardar imagen final
             System.out.println("Guardando imagen final...");
             javax.imageio.ImageIO.write(imagenSalida, "png", new java.io.File(salidaPath));
             
+            // Medición final
+            memoriaUsada = runtime.totalMemory() - runtime.freeMemory();
+            recursos.registrarMedicion(memoriaUsada, runtime.totalMemory());
+            
             // Limpiar
             imagenOriginal = null;
             imagenSalida = null;
-            System.gc();
             
         } catch (Exception e) {
             System.err.println("Error procesando imagen: " + e.getMessage());
             e.printStackTrace();
         }
+        
+        return recursos;
     }
 
     private static int[][] extraerCanal(java.awt.image.BufferedImage imagen, int canal) {
@@ -173,13 +277,7 @@ public class Main {
                     case 2: canalData[y][x] = rgb & 0xFF; break;         // B
                 }
             }
-            
-            // Limpiar memoria cada 1000 filas
-            if (y % 1000 == 0 && y > 0) {
-                System.gc();
-            }
         }
-        
         return canalData;
     }
 
@@ -205,11 +303,6 @@ public class Main {
                 }
                 
                 imagen.setRGB(x, y, rgb);
-            }
-            
-            // Limpiar memoria cada 1000 filas
-            if (y % 1000 == 0 && y > 0) {
-                System.gc();
             }
         }
     }
